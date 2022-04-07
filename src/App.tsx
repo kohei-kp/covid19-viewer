@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
 import { fetchCovid19 } from './api';
-import PunchCard from './components/PunchCard';
+import GitHubCalendar from './components/GitHubCalendar';
+// import PunchCard from './components/PunchCard';
+// import DenseTable from './components/Table.tsx';
 
 type item = {
   date: string;
   name_jp: string;
   npatients: string;
+  npatients_day?: number;
 };
 type apiResponse = {
   errorInfo: any;
@@ -17,15 +20,29 @@ const App = () => {
 
   useEffect(() => {
     fetchCovid19().then((res: apiResponse) => {
-      console.log(res);
-      setCovid19(res.itemList);
+      const itemList = res.itemList.map((item, i) => {
+        if (i !== res.itemList.length - 1) {
+          item.npatients_day =
+            Number(item.npatients) - Number(res.itemList[i + 1].npatients);
+        } else {
+          item.npatients_day = 0;
+        }
+        return item;
+      });
+
+      setCovid19(
+        itemList.sort((a, b) => {
+          const aDate = new Date(a.date);
+          const bDate = new Date(b.date);
+          return aDate.getTime() - bDate.getTime();
+        }),
+      );
     });
   }, []);
 
   return (
     <>
-      <h1>Rainbow</h1>
-      <PunchCard />
+      <GitHubCalendar rows={covid19} />
     </>
   );
 };

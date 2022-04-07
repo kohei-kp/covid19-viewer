@@ -1,4 +1,4 @@
-const apiUrl = 'static/Covid19JapanAll.json';
+const apiUrl = 'static/Covid19JapanAll_Hyogo.json';
 
 export const fetchCovid19 = async () => {
   const response = await fetch(apiUrl);
