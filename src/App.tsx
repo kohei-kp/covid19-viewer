@@ -3,8 +3,11 @@ import { fetchCovid19 } from './api';
 import GitHubCalendar from './components/GitHubCalendar';
 // import PunchCard from './components/PunchCard';
 // import DenseTable from './components/Table.tsx';
+import Select, { SelectChangeEvent } from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import InputLabel from '@mui/material/InputLabel';
 
-type item = {
+export type item = {
   date: string;
   name_jp: string;
   npatients: string;
@@ -17,6 +20,8 @@ type apiResponse = {
 
 const App = () => {
   const [covid19, setCovid19] = useState<item[]>([]);
+  const [selectedYear, setYear] = useState<string>('2020');
+  const [filteredCovid19, setFilteredCovid19] = useState<item[]>([]);
 
   useEffect(() => {
     fetchCovid19().then((res: apiResponse) => {
@@ -37,13 +42,36 @@ const App = () => {
           return aDate.getTime() - bDate.getTime();
         }),
       );
+      console.log(covid19);
     });
   }, []);
 
+  const style = {
+    paddingTop: '20px',
+  };
+  const handleChange = (e: SelectChangeEvent) => {
+    setYear(e.target.value);
+  };
+
+  useEffect(() => {
+    const filtered = covid19.filter((item) => {
+      const date = new Date(item.date);
+      return date.getFullYear() === Number(selectedYear);
+    });
+
+    setFilteredCovid19(filtered);
+  }, [selectedYear]);
+
   return (
-    <>
-      <GitHubCalendar rows={covid19} />
-    </>
+    <div style={style}>
+      <InputLabel id="select-label">Year</InputLabel>
+      <Select onChange={handleChange} value={selectedYear} label="2020">
+        <MenuItem value="2020">2020</MenuItem>
+        <MenuItem value="2021">2021</MenuItem>
+        <MenuItem value="2022">2022</MenuItem>
+      </Select>
+      <GitHubCalendar rows={filteredCovid19} year={selectedYear} />
+    </div>
   );
 };
 

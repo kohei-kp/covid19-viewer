@@ -1,20 +1,8 @@
 import * as d3 from 'd3';
+import { item } from '../App';
 import { useRef, useEffect, useState } from 'react';
 
-interface row {
-  date: String;
-  name_jp: String;
-  npatients: String;
-  npatients_day: number;
-}
-
-interface PropTypes {
-  rows: row[];
-}
-
-const GitHubCalendar: React.FC<PropTypes> = (props) => {
-  const ref = useRef(null);
-  const [rect, setRect] = useState<any>(null);
+const createCalernderSvg = (target: Element, year: string) => {
   const width = 960;
   const height = 136;
   const cellSize = 17;
@@ -32,6 +20,69 @@ const GitHubCalendar: React.FC<PropTypes> = (props) => {
       (w0 + 1) * cellSize
     }Z`;
   };
+
+  d3.select('svg').remove();
+  const svg = d3
+    .select(target)
+    .selectAll('svg')
+    .data([Number(year)])
+    .enter()
+    .append('svg')
+    .attr('width', width)
+    .attr('height', height)
+    .append('g')
+    .attr(
+      'transform',
+      'translate(' +
+        (width - cellSize * 53) / 2 +
+        ',' +
+        (height - cellSize * 7 - 1) +
+        ')',
+    );
+
+  svg
+    .append('text')
+    .attr('transform', 'translate(-6,' + cellSize * 3.5 + ')rotate(-90)')
+    .attr('font-family', 'sans-serif')
+    .attr('font-size', 10)
+    .attr('text-anchor', 'middle')
+    .text((d) => d);
+
+  const rect = svg
+    .append('g')
+    .attr('fill', 'none')
+    .attr('stroke', '#ccc')
+    .selectAll('rect')
+    .data((d) => d3.timeDays(new Date(d, 0, 1), new Date(d + 1, 0, 1)))
+    .enter()
+    .append('rect')
+    .attr('width', cellSize)
+    .attr('height', cellSize)
+    .attr('x', (d) => d3.timeWeek.count(d3.timeYear(d), d) * cellSize)
+    .attr('y', (d) => d.getDay() * cellSize)
+    .datum(d3.timeFormat('%Y-%m-%d'));
+
+  svg
+    .append('g')
+    .attr('fill', 'none')
+    .attr('stroke', '#000')
+    .selectAll('path')
+    .data((d) => d3.timeMonths(new Date(d, 0, 1), new Date(d + 1, 0, 1)))
+    .enter()
+    .append('path')
+    .attr('d', pathMonth);
+
+  return rect;
+};
+
+interface PropTypes {
+  rows: item[];
+  year: string;
+}
+
+const GitHubCalendar: React.FC<PropTypes> = (props) => {
+  const ref = useRef(null);
+  const [rect, setRect] = useState<any>(null);
 
   const formatPercent = d3.format('.1%');
   const colors = [
@@ -51,58 +102,19 @@ const GitHubCalendar: React.FC<PropTypes> = (props) => {
   const color = d3.scaleQuantize<string>().domain([0, 6000]).range(colors);
 
   useEffect(() => {
-    const svg = d3
-      .select(ref.current)
-      .selectAll('svg')
-      .data(d3.range(2020, 2023))
-      .enter()
-      .append('svg')
-      .attr('width', width)
-      .attr('height', height)
-      .append('g')
-      .attr(
-        'transform',
-        'translate(' +
-          (width - cellSize * 53) / 2 +
-          ',' +
-          (height - cellSize * 7 - 1) +
-          ')',
-      );
-
-    svg
-      .append('text')
-      .attr('transform', 'translate(-6,' + cellSize * 3.5 + ')rotate(-90)')
-      .attr('font-family', 'sans-serif')
-      .attr('font-size', 10)
-      .attr('text-anchor', 'middle')
-      .text((d) => d);
-
-    const rect = svg
-      .append('g')
-      .attr('fill', 'none')
-      .attr('stroke', '#ccc')
-      .selectAll('rect')
-      .data((d) => d3.timeDays(new Date(d, 0, 1), new Date(d + 1, 0, 1)))
-      .enter()
-      .append('rect')
-      .attr('width', cellSize)
-      .attr('height', cellSize)
-      .attr('x', (d) => d3.timeWeek.count(d3.timeYear(d), d) * cellSize)
-      .attr('y', (d) => d.getDay() * cellSize)
-      .datum(d3.timeFormat('%Y-%m-%d'));
-
-    setRect(rect);
-
-    svg
-      .append('g')
-      .attr('fill', 'none')
-      .attr('stroke', '#000')
-      .selectAll('path')
-      .data((d) => d3.timeMonths(new Date(d, 0, 1), new Date(d + 1, 0, 1)))
-      .enter()
-      .append('path')
-      .attr('d', pathMonth);
+    if (ref.current) {
+      const rect = createCalernderSvg(ref.current, props.year);
+      setRect(rect);
+    }
   }, []);
+
+  useEffect(() => {
+    if (ref.current) {
+      console.log('a');
+      const rect = createCalernderSvg(ref.current, props.year);
+      setRect(rect);
+    }
+  }, [props.year]);
 
   useEffect(() => {
     if (rect === null) return;
